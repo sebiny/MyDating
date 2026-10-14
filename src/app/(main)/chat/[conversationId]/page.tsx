@@ -1,6 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { profiles } from "@/src/lib/profiles";
 
@@ -27,6 +33,7 @@ function ChatRoom() {
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
+    // the conversation
     {
       id: 1,
       text: "Hey! 😊 It's nice to finally chat with you!",
@@ -56,9 +63,11 @@ function ChatRoom() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // React track the bottomRef.current
     bottomRef.current?.scrollIntoView({
       behavior: "smooth",
     });
+    console.log(messages);
   }, [messages]);
 
   if (!person) {
@@ -69,7 +78,7 @@ function ChatRoom() {
     );
   }
 
-  function handleSendMessage(event: FormEvent<HTMLFormElement>) {
+  function handleSendMessage(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const text = input.trim();
@@ -166,6 +175,7 @@ function ChatRoom() {
         ))}
 
         <div ref={bottomRef} />
+        {/* attach bottomRed to a div*/}
       </section>
 
       {/* Message composer */}
