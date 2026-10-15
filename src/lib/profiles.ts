@@ -1,3 +1,19 @@
+export type MyProfile = {
+  name: string;
+  gender: string;
+  age: string;
+  location: string;
+  occupation: string;
+  education: string;
+  height: string;
+  introduction: string;
+  hobbies: string;
+  interests: string;
+  relationshipGoal: string;
+  music: string;
+  lifestyle: string;
+};
+
 export type Profile = {
   id: number;
   name: string;
@@ -6,6 +22,23 @@ export type Profile = {
   image: string;
   job: string;
   intro?:string;
+};
+
+export const initialMyProfile: MyProfile = {
+  name: "Alex",
+  gender: "Woman",
+  age: "24",
+  location: "Vancouver, Canada",
+  occupation: "Frontend Developer",
+  education: "University graduate",
+  height: "165 cm",
+  introduction:
+    "I love cozy cafes, discovering new places, and having conversations that last for hours.",
+  hobbies: "Cafe hopping, Photography, Hiking",
+  interests: "Technology, Movies, Travel",
+  relationshipGoal: "A meaningful relationship",
+  music: "Indie pop, R&B",
+  lifestyle: "Non-smoker, Active on weekends",
 };
 
 export const profiles: Profile[] = [
