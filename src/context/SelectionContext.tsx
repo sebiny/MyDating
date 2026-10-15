@@ -76,7 +76,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   //this ids need to be reassigned
   try {
     const parsed: unknown = JSON.parse(savedValue);
-
+    // localStorage stores data as strings, not as JavaScript arrays or objects. so we need to parse it to be a JS data
     if (
       //if parsed is array do .every
       Array.isArray(parsed) &&
