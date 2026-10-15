@@ -1,42 +1,10 @@
 "use client";
 
+import { initialMyProfile, MyProfile } from "@/src/lib/profiles";
 import { SyntheticEvent, useState } from "react";
 
-type ProfileData = {
-  name: string;
-  gender: string;
-  age: string;
-  location: string;
-  occupation: string;
-  education: string;
-  height: string;
-  introduction: string;
-  hobbies: string;
-  interests: string;
-  relationshipGoal: string;
-  music: string;
-  lifestyle: string;
-};
-
-const initialProfile: ProfileData = {
-  name: "Alex",
-  gender: "Woman",
-  age: "24",
-  location: "Vancouver, Canada",
-  occupation: "Frontend Developer",
-  education: "University graduate",
-  height: "165 cm",
-  introduction:
-    "I love cozy cafes, discovering new places, and having conversations that last for hours.",
-  hobbies: "Cafe hopping, Photography, Hiking",
-  interests: "Technology, Movies, Travel",
-  relationshipGoal: "A meaningful relationship",
-  music: "Indie pop, R&B",
-  lifestyle: "Non-smoker, Active on weekends",
-};
-
 const fields: {
-  key: keyof ProfileData;
+  key: keyof MyProfile;
   label: string;
   placeholder: string;
   type?: string;
@@ -66,8 +34,8 @@ const fields: {
 ];
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<ProfileData>(initialProfile);
-  const [draft, setDraft] = useState<ProfileData>(initialProfile);
+  const [profile, setProfile] = useState<MyProfile>(initialMyProfile);
+  const [draft, setDraft] = useState<MyProfile>(initialMyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
 
@@ -82,7 +50,7 @@ export default function ProfilePage() {
     setIsEditing(false);
   }
 
-  function updateField(key: keyof ProfileData, value: string) {
+  function updateField(key: keyof MyProfile, value: string) {
     setDraft((previous) => ({
       ...previous,
       [key]: value,
@@ -105,7 +73,6 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-[#fff8fa] px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-4xl">
-        {/* Page heading */}
         <header className="mb-8 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium text-pink-500">
