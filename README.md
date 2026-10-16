@@ -1,4 +1,4 @@
-MyDating 
+###MyDating 
 
 A modern dating platform built with Next.js, TypeScript, Tailwind CSS, and Supabase, designed to help people discover compatible profiles, select multiple people, express interest, and build meaningful connections.
 
@@ -9,7 +9,7 @@ swipe-left/swipe-right model. It’s more like curated dating: users discover pe
 ### My dating app structure
 
 The biggest difference: the homepage should only show people who have been selected or approved according to your matching rules, rather than every registered user.
-
+!KakaoTalk_20261013_002202129_01.jpg
 ✨ Features
 
 🔐 Authentication
