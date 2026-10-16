@@ -1,6 +1,8 @@
-###MyDating 
+### MyDating 
 
 A modern dating platform built with Next.js, TypeScript, Tailwind CSS, and Supabase, designed to help people discover compatible profiles, select multiple people, express interest, and build meaningful connections.
+
+notion: https://app.notion.com/p/My-Dating-8831387f773783e884af013fbb3ba6a0
 
 ### Current dating app
 
@@ -9,7 +11,6 @@ swipe-left/swipe-right model. It’s more like curated dating: users discover pe
 ### My dating app structure
 
 The biggest difference: the homepage should only show people who have been selected or approved according to your matching rules, rather than every registered user.
-!KakaoTalk_20261013_002202129_01.jpg
 ✨ Features
 
 🔐 Authentication
@@ -24,6 +25,8 @@ The biggest difference: the homepage should only show people who have been selec
 * Share job, nationality, hobbies, and interests
 * Complete a personality and compatibility questionnaire
 * Set dating preferences
+
+<img width="1179" height="1170" alt="KakaoTalk_20261016_150229783_02" src="https://github.com/user-attachments/assets/af5bc3f6-f0e8-4172-926f-d667aa5b6fd4" />
 
 🏠 Home — Discover
 * Browse compatible people in a responsive profile grid
@@ -129,7 +132,3 @@ Chat
 * [ ]	Implement matching and notifications
 * [ ]	Build real-time messaging
 * [ ]	Deploy the application
-
-⸻
-
-Built with ❤️ using Next.js and Supabase.
