@@ -73,8 +73,9 @@ Supabase Auth	Authentication and sessions
 Supabase PostgreSQL	Database and profile storage
 Supabase Storage	Profile photo uploads
 
-📁 Project Structure
+## 📁 Project Structure
 
+```text
 my-dating-app/
 ├── public/
 │   ├── images/
@@ -111,8 +112,11 @@ my-dating-app/
 ├── package.json
 ├── tsconfig.json
 └── README.md
+```
 
-🔄 User Flow
+## 🔄 User Flow
+
+```text
 Sign Up / Login
        ↓
 Profile Setup
@@ -130,6 +134,7 @@ Confirm Interest or Message Request
 Incoming Interest / Mutual Match
        ↓
 Chat
+```
 
 🗺️ Planned Development
 * [ ]	Implement authentication and email verification
