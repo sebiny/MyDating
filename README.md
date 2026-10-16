@@ -50,7 +50,9 @@ The biggest difference: the homepage should only show people who have been selec
 * Accept or decline incoming interest
 * Notify users when their interest is accepted
 * Create mutual connections based on matching rules
+  
 <img width="250" height="280" alt="KakaoTalk_20261016_150229783_03" src="https://github.com/user-attachments/assets/3babd0a8-5dee-441d-a3f3-b897d226f4ac" />
+
 💬 Chat
 * View conversations
 * Send and receive messages
