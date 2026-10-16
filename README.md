@@ -26,7 +26,9 @@ The biggest difference: the homepage should only show people who have been selec
 * Complete a personality and compatibility questionnaire
 * Set dating preferences
 
-<img width="1179" height="1170" alt="KakaoTalk_20261016_150229783_02" src="https://github.com/user-attachments/assets/af5bc3f6-f0e8-4172-926f-d667aa5b6fd4" />
+<img width="250" height="250" alt="KakaoTalk_20261016_150229783_02" src="https://github.com/user-attachments/assets/af5bc3f6-f0e8-4172-926f-d667aa5b6fd4" />
+
+<img width="250" height="300" alt="KakaoTalk_20261016_150229783_01" src="https://github.com/user-attachments/assets/0b78086c-79c4-457a-9503-22ff8dca6386" />
 
 🏠 Home — Discover
 * Browse compatible people in a responsive profile grid
