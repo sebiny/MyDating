@@ -14,7 +14,7 @@ The biggest difference: the homepage should only show people who have been selec
 ### To see more
 notion: https://app.notion.com/p/My-Dating-8831387f773783e884af013fbb3ba6a0
 
-deploy:
+deploy:https://my-dating-eight.vercel.app/
 
 ### ✨ Features
 
