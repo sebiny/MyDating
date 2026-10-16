@@ -1,8 +1,6 @@
 ### MyDating 
 
-A modern dating platform built with Next.js, TypeScript, Tailwind CSS, and Supabase, designed to help people discover compatible profiles, select multiple people, express interest, and build meaningful connections.
-
-notion: https://app.notion.com/p/My-Dating-8831387f773783e884af013fbb3ba6a0
+Stop doing endless swiping to find your type! This will help you find your ideal type in a more efficient way. A CURATED DATING APP 💗 : users discover people, select multiple people they’re interested in, confirm their choices, and then decide whether to message them.
 
 ### Current dating app
 
@@ -11,7 +9,13 @@ swipe-left/swipe-right model. It’s more like curated dating: users discover pe
 ### My dating app structure
 
 The biggest difference: the homepage should only show people who have been selected or approved according to your matching rules, rather than every registered user.
-✨ Features
+
+
+### To see more
+notion: https://app.notion.com/p/My-Dating-8831387f773783e884af013fbb3ba6a0
+deploy:
+
+### ✨ Features
 
 🔐 Authentication
 * User sign-up and login
