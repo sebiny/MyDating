@@ -25,10 +25,11 @@ The biggest difference: the homepage should only show people who have been selec
 * Share job, nationality, hobbies, and interests
 * Complete a personality and compatibility questionnaire
 * Set dating preferences
-
+       
 <img width="250" height="250" alt="KakaoTalk_20261016_150229783_02" src="https://github.com/user-attachments/assets/af5bc3f6-f0e8-4172-926f-d667aa5b6fd4" />
 
-<img width="250" height="300" alt="KakaoTalk_20261016_150229783_01" src="https://github.com/user-attachments/assets/0b78086c-79c4-457a-9503-22ff8dca6386" />
+<img width="250" height="280" alt="KakaoTalk_20261016_150229783_01" src="https://github.com/user-attachments/assets/0b78086c-79c4-457a-9503-22ff8dca6386" />
+</div>
 
 🏠 Home — Discover
 * Browse compatible people in a responsive profile grid
@@ -49,7 +50,7 @@ The biggest difference: the homepage should only show people who have been selec
 * Accept or decline incoming interest
 * Notify users when their interest is accepted
 * Create mutual connections based on matching rules
-
+<img width="250" height="280" alt="KakaoTalk_20261016_150229783_03" src="https://github.com/user-attachments/assets/3babd0a8-5dee-441d-a3f3-b897d226f4ac" />
 💬 Chat
 * View conversations
 * Send and receive messages
