@@ -74,6 +74,7 @@ Supabase PostgreSQL	Database and profile storage
 Supabase Storage	Profile photo uploads
 
 📁 Project Structure
+
 my-dating-app/
 ├── public/
 │   ├── images/
