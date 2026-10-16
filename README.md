@@ -1,6 +1,6 @@
 ### MyDating 
 
-Stop doing endless swiping to find your type! This will help you find your ideal type in a more efficient way. A CURATED DATING APP 💗 : users discover people, select multiple people they’re interested in, confirm their choices, and then decide whether to message them.
+A CURATED DATING APP : users can discover selected people they’re interested in instead of doing endless swiping to find your type! This will help you find your ideal type in a more efficient way.
 
 ### Current dating app
 
