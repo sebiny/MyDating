@@ -32,7 +32,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </Link>
           {isSignup && (
             <Link
-              href="/onboarding"
+              href="/onboarding/profile-setup"
               className=" font-bold tracking-tight text-pink-300 "
             >
               ProfileSetUpPage
