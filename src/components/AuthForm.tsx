@@ -23,13 +23,22 @@ export default function AuthForm({ mode }: AuthFormProps) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#fff7f8] px-5 py-10">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl shadow-pink-100 sm:p-10">
-        <Link
-          href="/"
-          className="text-2xl font-bold tracking-tight text-pink-500"
-        >
-          dear. ♡
-        </Link>
-
+        <div className="flex justify-between">
+          <Link
+            href="/"
+            className="text-2xl font-bold tracking-tight text-pink-500"
+          >
+            dear. ♡
+          </Link>
+          {isSignup && (
+            <Link
+              href="/onboarding"
+              className=" font-bold tracking-tight text-pink-300 "
+            >
+              ProfileSetUpPage
+            </Link>
+          )}
+        </div>
         <div className="mb-8 mt-8">
           <p className="mb-2 text-sm font-medium text-pink-400">
             YOUR STORY STARTS HERE
