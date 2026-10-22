@@ -2,11 +2,22 @@
 
 import Link from "next/link";
 import BottomNavbar from "@/src/components/layout/BottomNavbar";
-import { profiles } from "@/src/lib/profiles";
+import { getCuratedProfiles, type Profile } from "@/src/lib/profiles";
 import { useSelection } from "@/src/context/SelectionContext";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const { selectedIds, toggleSelection } = useSelection();
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getCuratedProfiles()
+      .then(setProfiles)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load curated profiles."))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#faf8f6] pb-36 text-gray-900">
@@ -36,6 +47,14 @@ export default function HomePage() {
         </div>
 
         {/* Profile grid */}
+        {loading && <p className="col-span-full py-12 text-center text-sm text-gray-500">Finding people who fit your type…</p>}
+        {error && <p role="alert" className="col-span-full py-12 text-center text-sm text-red-600">{error}</p>}
+        {!loading && !error && profiles.length === 0 && (
+          <div className="col-span-full rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
+            <h2 className="font-semibold">Your curated list is taking shape</h2>
+            <p className="mt-2 text-sm text-gray-500">We’ll show people who fit your preferences and are also looking for someone like you.</p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {profiles.map((profile) => {
             const isSelected = selectedIds.includes(profile.id);
@@ -82,7 +101,7 @@ export default function HomePage() {
                   </h3>
 
                   <p className="mt-1 text-xs font-medium text-rose-500">
-                    {profile.job}
+                    {[profile.job, profile.city].filter(Boolean).join(" · ")}
                   </p>
 
                   <p className="mt-2 line-clamp-2 text-sm leading-5 text-gray-500">
@@ -91,7 +110,7 @@ export default function HomePage() {
 
                   <button
                     type="button"
-                    onClick={() => toggleSelection(profile.id)}
+                    onClick={() => void toggleSelection(profile.id)}
                     className={`mt-3 w-full rounded-xl py-2 text-sm font-semibold transition ${
                       isSelected
                         ? "bg-rose-100 text-rose-600"

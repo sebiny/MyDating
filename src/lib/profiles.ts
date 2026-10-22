@@ -15,12 +15,14 @@ export type MyProfile = {
 };
 
 export type Profile = {
-  id: number;
+  id: string;
   name: string;
   age: number;
   introduction: string;
   image: string;
   job: string;
+  city?: string;
+  interests?: string[];
   intro?:string;
 };
 
@@ -41,59 +43,44 @@ export const initialMyProfile: MyProfile = {
   lifestyle: "Non-smoker, Active on weekends",
 };
 
-export const profiles: Profile[] = [
-  {
-    id: 1,
-    name: "Sophie",
-    age: 25,
-    introduction: "Coffee, travel, and little adventures ☕",
-    image:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600",
-    job: "Designer",
-  },
-  {
-    id: 2,
-    name: "Daniel",
-    age: 27,
-    introduction: "Looking for someone to explore the world with.",
-    image:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600",
-    job: "Developer",
-  },
-  {
-    id: 3,
-    name: "Emma",
-    age: 24,
-    introduction: "Book lover, foodie, and weekend explorer 📚",
-    image:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600",
-    job: "Teacher",
-  },
-  {
-    id: 4,
-    name: "Alex",
-    age: 26,
-    introduction: "Music, hiking, and meaningful conversations.",
-    image:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600",
-    job: "Photographer",
-  },
-  {
-    id: 5,
-    name: "Mia",
-    age: 23,
-    introduction: "Always searching for a new favorite place.",
-    image:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600",
-    job: "Marketing",
-  },
-  {
-    id: 6,
-    name: "Noah",
-    age: 28,
-    introduction: "Gym, good food, and spontaneous road trips.",
-    image:
-      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600",
-    job: "Engineer",
-  },
-];
+type ProfileRow = {
+  id: string;
+  display_name: string;
+  age: number;
+  bio: string | null;
+  photo_urls: string[];
+  occupation: string | null;
+  city: string | null;
+  interests: string[];
+};
+
+function toProfile(row: ProfileRow): Profile {
+  return {
+    id: row.id,
+    name: row.display_name,
+    age: row.age,
+    introduction: row.bio ?? "",
+    image: row.photo_urls?.[0] ?? "/window.svg",
+    job: row.occupation ?? "",
+    city: row.city ?? undefined,
+    interests: row.interests ?? [],
+  };
+}
+
+export async function getCuratedProfiles() {
+  const { createClient } = await import("@/src/lib/supabase/browser");
+  const { data, error } = await createClient().rpc("discover_profiles");
+  if (error) throw error;
+  return ((data ?? []) as ProfileRow[]).map(toProfile);
+}
+
+export async function getSelectedProfiles(ids: string[]) {
+  if (!ids.length) return [];
+  const { createClient } = await import("@/src/lib/supabase/browser");
+  const { data, error } = await createClient()
+    .from("profiles")
+    .select("id,display_name,age,bio,photo_urls,occupation,city,interests")
+    .in("id", ids);
+  if (error) throw error;
+  return ((data ?? []) as ProfileRow[]).map(toProfile);
+}

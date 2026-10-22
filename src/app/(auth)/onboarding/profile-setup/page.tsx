@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/src/lib/supabase/browser";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function ProfileSetupPage() {
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const photoFileRef = useRef<File | null>(null);
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -30,6 +33,7 @@ export default function ProfileSetupPage() {
     }
 
     setError("");
+    photoFileRef.current = file;
 
     const reader = new FileReader();
 
@@ -40,7 +44,7 @@ export default function ProfileSetupPage() {
     reader.readAsDataURL(file);
   }
 
-  function handleContinue(event: React.FormEvent<HTMLFormElement>) {
+  async function handleContinue(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const numericAge = Number(age);
@@ -57,11 +61,42 @@ export default function ProfileSetupPage() {
       return;
     }
 
+    setSaving(true);
     try {
+      const supabase = createClient();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("Please sign in again to continue.");
+
+      let photoUrl: string | null = null;
+      if (photoFileRef.current) {
+        const file = photoFileRef.current;
+        const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+        if (uploadError) throw uploadError;
+        photoUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      }
+
+      const genderValue = gender === "woman" || gender === "man" || gender === "non-binary"
+        ? gender
+        : "other";
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: user.id,
+        display_name: name.trim(),
+        age: numericAge,
+        gender: genderValue,
+        city: location.trim(),
+        ...(photoUrl ? { photo_urls: [photoUrl] } : {}),
+      });
+      if (profileError) throw profileError;
+
       localStorage.setItem(
         "datingProfile",
         JSON.stringify({
-          photo,
+          photo: photoUrl,
           name: name.trim(),
           age: numericAge,
           gender,
@@ -70,8 +105,10 @@ export default function ProfileSetupPage() {
       );
 
       router.push("/onboarding/profile-setup/introduce");
-    } catch {
-      setError("Unable to save your profile. Please try another photo.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to save your profile. Please try again.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -202,9 +239,10 @@ export default function ProfileSetupPage() {
 
         <button
           type="submit"
+          disabled={saving}
           className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#d8a7ff] font-semibold text-[#21172d] transition hover:bg-[#c991f7]"
         >
-          Continue <span aria-hidden="true">→</span>
+          {saving ? "Saving…" : <>Continue <span aria-hidden="true">→</span></>}
         </button>
 
         <p className="mt-4 text-center text-xs text-gray-400">

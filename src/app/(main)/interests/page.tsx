@@ -1,215 +1,133 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { profiles } from "@/src/lib/profiles";
-import { incomingInterests } from "@/src/types/interests";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import BottomNavbar from "@/src/components/layout/BottomNavbar";
+import { getSelectedProfiles, type Profile } from "@/src/lib/profiles";
+import { createClient } from "@/src/lib/supabase/browser";
+
+type IncomingInterest = { id: string; sender_id: string; created_at: string };
+type IncomingCard = IncomingInterest & { person: Profile };
 
 export default function InterestsPage() {
-  const router = useRouter();
+  const [incoming, setIncoming] = useState<IncomingCard[]>([]);
+  const [outgoing, setOutgoing] = useState<{ id: string; recipient_id: string; status: string; person: Profile }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [workingId, setWorkingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  const [acceptedIds, setAcceptedIds] = useState<number[]>([]);
-  const [declinedIds, setDeclinedIds] = useState<number[]>([]);
-  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
-
-  const visibleInterests = incomingInterests.filter(
-    (interest) =>
-      !acceptedIds.includes(interest.id) && !declinedIds.includes(interest.id),
-  );
-
-  const selectedInterest = incomingInterests.find(
-    (interest) => interest.id === selectedPersonId,
-  );
-
-  const selectedPerson = profiles.find(
-    (person) => person.id === selectedPersonId,
-  );
-
-  function acceptInterest(id: number) {
-    setAcceptedIds((previous) => [...previous, id]);
-    setSelectedPersonId(id);
-  }
-
-  function declineInterest(id: number) {
-    setDeclinedIds((previous) => [...previous, id]);
-  }
-
-  function startChat() {
-    if (!selectedPerson || !selectedInterest) return;
-
-    const personId = selectedPerson.id;
-
-    // Match the localStorage key used by your chat page.
-    const storageKey = `chat-${personId}`;
-
-    // Add the message this person sent you.
-    const incomingMessage = {
-      id: Date.now(),
-      text: selectedInterest.message,
-      sender: "them" as const,
-      time: selectedInterest.time,
-    };
-
+  const loadInterests = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      const savedMessages = localStorage.getItem(storageKey);
-      const messages = savedMessages ? JSON.parse(savedMessages) : [];
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const [{ data: received, error: receivedError }, { data: sent, error: sentError }] = await Promise.all([
+        supabase.from("interests").select("id,sender_id,created_at").eq("recipient_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
+        supabase.from("interests").select("id,recipient_id,status").eq("sender_id", user.id).in("status", ["pending", "accepted"]),
+      ]);
+      if (receivedError) throw receivedError;
+      if (sentError) throw sentError;
 
-      if (Array.isArray(messages)) {
-        // Don't add the same initial message twice.
-        const alreadyExists = messages.some(
-          (message) => message.text === incomingMessage.text,
-        );
+      // Explicit row shapes keep these Supabase query results type-safe in the UI mapping below.
+      const receivedRows = (received ?? []) as IncomingInterest[];
+      const sentRows = (sent ?? []) as { id: string; recipient_id: string; status: string }[];
+      const ids = [...new Set([...receivedRows.map((item) => item.sender_id), ...sentRows.map((item) => item.recipient_id)])];
+      const profiles = await getSelectedProfiles(ids);
+      const byId = new Map(profiles.map((person) => [person.id, person]));
+      setIncoming(receivedRows.flatMap((interest) => {
+        const person = byId.get(interest.sender_id);
+        return person ? [{ ...interest, person }] : [];
+      }));
+      setOutgoing(sentRows.flatMap((interest) => {
+        const person = byId.get(interest.recipient_id);
+        return person ? [{ ...interest, person }] : [];
+      }));
 
-        if (!alreadyExists) {
-          localStorage.setItem(
-            storageKey,
-            JSON.stringify([...messages, incomingMessage]),
-          );
-        }
-      } else {
-        localStorage.setItem(storageKey, JSON.stringify([incomingMessage]));
+      const incomingIds = receivedRows.map((interest) => interest.id);
+      if (incomingIds.length) {
+        await supabase.from("notifications").update({ read_at: new Date().toISOString() })
+          .eq("user_id", user.id).eq("kind", "interest").in("entity_id", incomingIds).is("read_at", null);
       }
-    } catch {
-      localStorage.setItem(storageKey, JSON.stringify([incomingMessage]));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load interests.");
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    setSelectedPersonId(null);
-    router.push(`/chat/${personId}`);
+  useEffect(() => { void loadInterests(); }, [loadInterests]);
+
+  async function respond(id: string, accept: boolean) {
+    setWorkingId(id);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { data: matchId, error: responseError } = await supabase.rpc("respond_to_interest", {
+        interest_id: id,
+        accept,
+      });
+      if (responseError) throw responseError;
+      setIncoming((current) => current.filter((interest) => interest.id !== id));
+      if (accept && matchId) {
+        const { data: conversation, error: conversationError } = await supabase.from("conversations").select("id").eq("match_id", matchId).single();
+        if (conversationError) throw conversationError;
+        window.location.assign(`/chat/${conversation.id}`);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not respond to this interest.");
+    } finally {
+      setWorkingId(null);
+    }
   }
 
   return (
-    <main className="min-h-screen bg-[#fff8fa] px-4 py-10 sm:px-8">
+    <main className="min-h-screen bg-[#fff8fa] px-4 py-10 pb-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8">
-          <p className="mb-2 text-sm font-semibold tracking-wide text-pink-500">
-            SOMEONE LIKES YOU ♡
-          </p>
-
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            Interested in you
-          </h1>
-
-          <p className="mt-3 text-gray-500">
-            These people would love to get to know you.
-          </p>
-
-          <div className="mt-5 inline-flex rounded-full bg-pink-100 px-4 py-2 text-sm font-medium text-pink-700">
-            {visibleInterests.length} incoming{" "}
-            {visibleInterests.length === 1 ? "interest" : "interests"}
-          </div>
+          <p className="mb-2 text-sm font-semibold tracking-wide text-pink-500">SOMEONE LIKES YOU ♡</p>
+          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Interests & connections</h1>
+          <p className="mt-3 text-gray-500">Accept an interest to create a mutual match and open a private chat.</p>
         </header>
 
-        {visibleInterests.length === 0 ? (
-          <div className="rounded-3xl border border-pink-100 bg-white px-6 py-16 text-center">
-            <div className="mb-4 text-5xl">💌</div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {"You're all caught up!"}
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">
-              New interests will appear here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleInterests.map((interest) => {
-              const person = profiles.find(
-                (profile) => profile.id === interest.id,
-              );
-
-              if (!person) return null;
-
-              return (
-                <article
-                  key={interest.id}
-                  className="overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg hover:shadow-pink-100"
-                >
-                  <div className="flex h-36 items-center justify-center bg-gradient-to-br from-pink-200 via-rose-100 to-purple-100">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white text-3xl shadow-sm">
-                      💗
-                    </div>
-                  </div>
-
-                  <div className="p-5">
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {person.name}
-                    </h2>
-
-                    <p className="mt-3 text-xs text-gray-400">
-                      {interest.time}
-                    </p>
-
-                    <div className="mt-2 rounded-2xl bg-pink-50 p-3">
-                      <p className="text-sm leading-6 text-gray-600">
-                        {interest.message}
-                      </p>
-                    </div>
-
+        {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+        <section>
+          <h2 className="mb-4 text-lg font-semibold">Interested in you <span className="text-sm font-normal text-gray-500">({incoming.length})</span></h2>
+          {loading ? <p className="py-10 text-center text-sm text-gray-500">Loading interests…</p> : incoming.length === 0 ? (
+            <div className="rounded-3xl border border-pink-100 bg-white px-6 py-12 text-center">
+              <div className="mb-4 text-5xl">💌</div><h3 className="font-semibold">No incoming interests yet</h3>
+              <p className="mt-2 text-sm text-gray-500">New interests from people in your curated pool will appear here.</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {incoming.map(({ id, person, created_at }) => (
+                <article key={id} className="overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}<img src={person.image} alt={person.name} className="aspect-[4/3] w-full object-cover" />
+                  <div className="p-5"><h3 className="text-xl font-bold">{person.name}, {person.age}</h3>
+                    <p className="mt-1 text-xs text-gray-400">{new Date(created_at).toLocaleDateString()}</p>
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">{person.introduction}</p>
                     <div className="mt-5 grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => declineInterest(interest.id)}
-                        className="rounded-xl border border-gray-200 px-3 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
-                      >
-                        Decline
-                      </button>
-
-                      <button
-                        onClick={() => acceptInterest(interest.id)}
-                        className="rounded-xl bg-pink-500 px-3 py-3 text-sm font-semibold text-white transition hover:bg-pink-600"
-                      >
-                        Accept ♡
-                      </button>
+                      <button disabled={workingId === id} onClick={() => void respond(id, false)} className="rounded-xl border border-gray-200 px-3 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50">Decline</button>
+                      <button disabled={workingId === id} onClick={() => void respond(id, true)} className="rounded-xl bg-pink-500 px-3 py-3 text-sm font-semibold text-white hover:bg-pink-600 disabled:opacity-50">{workingId === id ? "Saving…" : "Accept ♡"}</button>
                     </div>
                   </div>
                 </article>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mt-12">
+          <h2 className="mb-4 text-lg font-semibold">Your sent interests</h2>
+          {outgoing.length === 0 ? <p className="rounded-2xl bg-white p-5 text-sm text-gray-500">No interests sent yet. <Link className="font-semibold text-pink-600" href="/home">Discover people</Link></p> : (
+            <ul className="divide-y rounded-2xl bg-white px-5">
+              {outgoing.map(({ id, person, status }) => <li key={id} className="flex items-center justify-between gap-3 py-4"><span className="font-medium">{person.name}</span><span className="text-sm capitalize text-gray-500">{status}</span></li>)}
+            </ul>
+          )}
+        </section>
       </div>
-
-      {/* Match confirmation modal */}
-      {selectedPerson && selectedInterest && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => setSelectedPersonId(null)}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="match-title"
-            className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 text-5xl">💞</div>
-
-            <p className="mb-2 text-sm font-semibold text-pink-500">
-              {"IT'S A CONNECTION!"}
-            </p>
-
-            <h2 id="match-title" className="text-2xl font-bold text-gray-900">
-              You accepted {selectedPerson.name}!
-            </h2>
-
-            <p className="mt-3 text-sm leading-6 text-gray-500">
-              {selectedPerson.name} sent you a message. Want to start chatting?
-            </p>
-
-            <button
-              onClick={startChat}
-              className="mt-7 w-full rounded-xl bg-pink-500 py-3.5 font-semibold text-white transition hover:bg-pink-600"
-            >
-              {" Let's chat 💌"}
-            </button>
-
-            <button
-              onClick={() => setSelectedPersonId(null)}
-              className="mt-3 w-full rounded-xl py-3 text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
-              Maybe later
-            </button>
-          </section>
-        </div>
-      )}
+      <BottomNavbar />
     </main>
   );
 }
