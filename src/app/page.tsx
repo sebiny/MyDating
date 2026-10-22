@@ -55,7 +55,7 @@ export default function Home() {
             href="/"
             className="text-2xl font-black tracking-tight text-pink-600"
           >
-            DateMate<span className="text-orange-400">.</span>
+            MyDating<span className="text-orange-400">.</span>
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">
@@ -131,7 +131,7 @@ export default function Home() {
               href="/home"
               className="rounded-full border border-gray-200 bg-white px-8 py-4 font-semibold transition hover:border-pink-300 hover:text-pink-600"
             >
-              Explore DateMate
+              Explore MyDating
             </Link>
           </div>
 
@@ -237,7 +237,7 @@ export default function Home() {
           </div>
           <div>
             <p className="leading-8 text-gray-700">
-              DateMate puts you in control. Build your profile, explore people
+              MyDating puts you in control. Build your profile, explore people
               who fit your preferences, select the profiles that catch your
               attention, and connect when the interest is mutual.
             </p>
@@ -254,7 +254,7 @@ export default function Home() {
       {/* Developer navigation */}
       <section className="border-t border-pink-100 bg-white px-6 py-12 lg:px-10">
         <div className="mx-auto max-w-7xl">
-          <h2 className="text-lg font-bold">Explore DateMate</h2>
+          <h2 className="text-lg font-bold">Explore MyDating</h2>
           <p className="mt-2 text-sm text-gray-500">
             Quick links to the pages you're building.
           </p>
@@ -269,19 +269,19 @@ export default function Home() {
               </Link>
             ))}
             <Link
-              href="/profile-setup"
+              href="/onboarding/profile-setup"
               className="rounded-full border border-gray-200 px-5 py-2.5 text-sm text-gray-700 transition hover:border-pink-300 hover:text-pink-600"
             >
               Profile Setup
             </Link>
             <Link
-              href="/profile-setup/introduce"
+              href="/onboarding/profile-setup/introduce"
               className="rounded-full border border-gray-200 px-5 py-2.5 text-sm text-gray-700 transition hover:border-pink-300 hover:text-pink-600"
             >
               Introduction
             </Link>
             <Link
-              href="/profile-setup/type"
+              href="/onboarding/profile-setup/type"
               className="rounded-full border border-gray-200 px-5 py-2.5 text-sm text-gray-700 transition hover:border-pink-300 hover:text-pink-600"
             >
               Personality Type
@@ -294,7 +294,7 @@ export default function Home() {
       <footer className="border-t border-pink-100 px-6 py-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
           <Link href="/" className="text-xl font-black text-pink-600">
-            DateMate<span className="text-orange-400">.</span>
+            MyDating<span className="text-orange-400">.</span>
           </Link>
           <p className="text-center text-sm text-gray-500">
             Make room for meaningful connections.

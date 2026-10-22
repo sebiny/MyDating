@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type SyntheticEvent } from "react";
+import { createClient } from "@/src/lib/supabase/browser";
 
 type AuthFormProps = {
   mode: "signup" | "login";
@@ -9,15 +11,50 @@ type AuthFormProps = {
 
 export default function AuthForm({ mode }: AuthFormProps) {
   const isSignup = mode === "signup";
+  const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    // UI only: connect your authentication API here.
-    alert(isSignup ? "Sign-up form submitted!" : "Login form submitted!");
+    setError("");
+    setNotice("");
+    setSubmitting(true);
+
+    try {
+      const supabase = createClient();
+      if (isSignup) {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name: name.trim() },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (signUpError) throw signUpError;
+        if (!data.session) {
+          setNotice("Check your email to verify your account, then sign in.");
+        } else {
+          router.replace("/onboarding/profile-setup");
+          router.refresh();
+        }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        router.replace("/home");
+        router.refresh();
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Authentication failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -30,14 +67,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
           >
             dear. ♡
           </Link>
-          {isSignup && (
-            <Link
-              href="/onboarding/profile-setup"
-              className=" font-bold tracking-tight text-pink-300 "
-            >
-              ProfileSetUpPage
-            </Link>
-          )}
         </div>
         <div className="mb-8 mt-8">
           <p className="mb-2 text-sm font-medium text-pink-400">
@@ -124,11 +153,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
             )}
           </div>
 
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
+
           <button
             type="submit"
+            disabled={submitting}
             className="w-full rounded-xl bg-pink-500 py-3.5 font-semibold text-white transition hover:bg-pink-600 active:scale-[0.99]"
           >
-            {isSignup ? "Create account" : "Log in"}
+            {submitting ? "Please wait…" : isSignup ? "Create account" : "Log in"}
           </button>
         </form>
 

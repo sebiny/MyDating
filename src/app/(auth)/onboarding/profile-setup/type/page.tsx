@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/src/lib/supabase/browser";
 
 const interestGroups = [
   {
@@ -81,6 +82,7 @@ export default function TypeSettingPage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   function toggleInterest(interest: string) {
     setError("");
@@ -99,7 +101,7 @@ export default function TypeSettingPage() {
     });
   }
 
-  function handleSave(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const min = Number(minAge);
@@ -116,20 +118,41 @@ export default function TypeSettingPage() {
       return;
     }
 
+    setSaving(true);
     try {
-      localStorage.setItem(
-        "datingPreferences",
-        JSON.stringify({
-          genderPreference,
-          ageRange: { min, max },
-          interests,
-          personality: answers,
-        }),
-      );
+      const supabase = createClient();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("Please sign in again to finish your profile.");
 
-      router.push("/home");
-    } catch {
-      setError("Could not save your preferences. Please try again.");
+      const profileBasics = JSON.parse(localStorage.getItem("datingProfile") ?? "{}") as { photo?: string | null };
+      const introduction = JSON.parse(localStorage.getItem("datingIntroduction") ?? "{}") as {
+        introduction?: string;
+        hobbies?: string[];
+        lifestyle?: string[];
+        relationshipGoal?: string;
+      };
+      const { error: updateError } = await supabase.from("profiles").update({
+        preferred_gender: genderPreference,
+        min_age: min,
+        max_age: max,
+        interests,
+        hobbies: introduction.hobbies ?? [],
+        lifestyle: introduction.lifestyle ?? [],
+        relationship_goal: introduction.relationshipGoal ?? null,
+        bio: introduction.introduction ?? null,
+        personality: answers,
+        is_complete: true,
+      }).eq("id", user.id);
+      if (updateError) throw updateError;
+
+      localStorage.removeItem("datingProfile");
+      localStorage.removeItem("datingIntroduction");
+      localStorage.removeItem("datingPreferences");
+      router.replace("/home");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save your preferences. Please try again.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -311,9 +334,10 @@ export default function TypeSettingPage() {
 
         <button
           type="submit"
+          disabled={saving}
           className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#d8a7ff] font-semibold text-[#21172d] transition hover:bg-[#c991f7]"
         >
-          Save & Continue <span aria-hidden="true">→</span>
+          {saving ? "Saving…" : <>Save & Continue <span aria-hidden="true">→</span></>}
         </button>
 
         <button

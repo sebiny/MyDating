@@ -141,10 +141,31 @@ Incoming Interest / Mutual Match
 Chat
 ```
 
-🗺️ Planned Development
-* [ ]	Implement authentication and email verification
-* [ ]	Create profile setup and editing
-* [ ]	Build personality questionnaire
-* [ ]	Implement matching and notifications
-* [ ]	Build real-time messaging
-* [ ]	Deploy the application
+🗺️ Development status
+* [x] Supabase email sign-up/sign-in with email verification callback
+* [x] Profile and preference onboarding with photo uploads
+* [x] Reciprocal curated discovery and persistent selections
+* [x] Incoming/outgoing interests with approval-based matches
+* [x] Persistent realtime chat and in-app notifications
+* [ ] Configure the Supabase project, apply migrations, and add production keys
+* [ ] Configure Supabase email verification redirects and deploy the updated app
+
+## Supabase setup
+
+This app uses Supabase Auth, PostgreSQL, Storage, and Realtime. Set "NEXT_PUBLIC_SUPABASE_URL" and "NEXT_PUBLIC_SUPABASE_ANON_KEY" in .env.local and in your Vercel project settings. Never use the service role key in browser code.
+
+Apply "supabase/migrations/0001_curated_dating.sql" to your Supabase project. It creates profile, selection, interest, match, conversation, message, and notification tables with row-level security. Email verification must be enabled in Supabase Auth, with "https://YOUR_DOMAIN/auth/callback" and "http://localhost:3000/auth/callback" added as allowed redirect URLs.
+
+Curated discovery uses reciprocal gender and age preferences. A user appears only when both profiles are complete, visible, and in each other's preference range. A chat becomes available only after an incoming interest is accepted. Messages are stored in PostgreSQL and delivered live through Supabase Realtime; each new message creates an in-app notification.
+
+### Current feature status
+- [x] Supabase email sign-up/sign-in and auth callback
+- [x] Profile and preference onboarding, photo uploads, and database persistence
+- [x] Reciprocal curated discovery and database-backed selections
+- [x] Incoming/outgoing interests and approval-based matches
+- [x] Persisted realtime chat and in-app notifications
+- [ ] Add Supabase project keys and apply the migration
+- [ ] Configure Supabase email verification and production redirect URLs
+
+Selections are persisted server-side. Onboarding uses temporary browser storage between the profile, introduction, and preference steps, then clears those temporary values after saving the completed profile.
+

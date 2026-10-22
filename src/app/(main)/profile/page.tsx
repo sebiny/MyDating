@@ -1,7 +1,9 @@
 "use client";
 
 import { initialMyProfile, MyProfile } from "@/src/lib/profiles";
-import { SyntheticEvent, useState } from "react";
+import { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/src/lib/supabase/browser";
 
 const fields: {
   key: keyof MyProfile;
@@ -34,13 +36,60 @@ const fields: {
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<MyProfile>(initialMyProfile);
   const [draft, setDraft] = useState<MyProfile>(initialMyProfile);
+  const [preferences, setPreferences] = useState({ preferredGender: "everyone", minAge: 18, maxAge: 100 });
+  const [draftPreferences, setDraftPreferences] = useState({ preferredGender: "everyone", minAge: 18, maxAge: 100 });
   const [isEditing, setIsEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const photoInput = useRef<HTMLInputElement>(null);
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const { data, error: queryError } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      if (queryError) throw queryError;
+      const nextProfile: MyProfile = {
+        name: data.display_name ?? "",
+        gender: data.gender ?? "",
+        age: data.age == null ? "" : String(data.age),
+        location: data.city ?? "",
+        occupation: data.occupation ?? "",
+        education: data.education ?? "",
+        height: data.height ?? "",
+        introduction: data.bio ?? "",
+        hobbies: (data.hobbies ?? []).join(", "),
+        interests: (data.interests ?? []).join(", "),
+        relationshipGoal: data.relationship_goal ?? "",
+        music: data.music ?? "",
+        lifestyle: (data.lifestyle ?? []).join(", "),
+      };
+      setProfile(nextProfile);
+      setDraft(nextProfile);
+      setPhotoUrl(data.photo_urls?.[0] ?? "");
+      const nextPreferences = { preferredGender: data.preferred_gender ?? "everyone", minAge: data.min_age ?? 18, maxAge: data.max_age ?? 100 };
+      setPreferences(nextPreferences);
+      setDraftPreferences(nextPreferences);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load your profile.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void loadProfile(); }, [loadProfile]);
 
   function startEditing() {
     setDraft({ ...profile });
+    setDraftPreferences({ ...preferences });
     setSavedMessage("");
     setIsEditing(true);
   }
@@ -57,14 +106,79 @@ export default function ProfilePage() {
     }));
   }
 
-  function saveProfile(e: SyntheticEvent<HTMLFormElement>) {
+  async function saveProfile(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setProfile({ ...draft });
-    setIsEditing(false);
-    setSavedMessage("Your profile has been updated!");
+    setError("");
+    if (draftPreferences.minAge < 18 || draftPreferences.maxAge > 100 || draftPreferences.minAge > draftPreferences.maxAge) {
+      setError("Choose a valid preferred age range between 18 and 100.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const split = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+      const { error: updateError } = await supabase.from("profiles").update({
+        display_name: draft.name.trim(),
+        age: Number(draft.age),
+        gender: draft.gender.toLowerCase() === "woman" || draft.gender.toLowerCase() === "man" || draft.gender.toLowerCase() === "non-binary" ? draft.gender.toLowerCase() : "other",
+        city: draft.location.trim(),
+        occupation: draft.occupation.trim() || null,
+        education: draft.education.trim() || null,
+        height: draft.height.trim() || null,
+        bio: draft.introduction.trim() || null,
+        hobbies: split(draft.hobbies),
+        interests: split(draft.interests),
+        relationship_goal: draft.relationshipGoal || null,
+        music: draft.music.trim() || null,
+        lifestyle: split(draft.lifestyle),
+        preferred_gender: draftPreferences.preferredGender,
+        min_age: draftPreferences.minAge,
+        max_age: draftPreferences.maxAge,
+      }).eq("id", user.id);
+      if (updateError) throw updateError;
+      setProfile({ ...draft });
+      setPreferences({ ...draftPreferences });
+      setIsEditing(false);
+      setSavedMessage("Your profile has been updated!");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update your profile.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const displayedProfile = isEditing ? draft : profile;
+
+  async function updatePhoto(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 3 * 1024 * 1024) {
+      setError("Choose an image smaller than 3 MB.");
+      return;
+    }
+    setPhotoSaving(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+      const nextUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      const { error: updateError } = await supabase.from("profiles").update({ photo_urls: [nextUrl] }).eq("id", user.id);
+      if (updateError) throw updateError;
+      setPhotoUrl(nextUrl);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update your photo.");
+    } finally {
+      setPhotoSaving(false);
+    }
+  }
+
+  if (loading) return <main className="p-10 text-center text-gray-500">Loading your profile…</main>;
 
   function renderValue(value: string) {
     return value || "Not added yet";
@@ -85,12 +199,10 @@ export default function ProfilePage() {
           </div>
 
           {!isEditing && (
-            <button
-              onClick={startEditing}
-              className="shrink-0 rounded-xl bg-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-600"
-            >
-              Edit profile
-            </button>
+            <div className="flex gap-2">
+              <button onClick={startEditing} className="shrink-0 rounded-xl bg-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-600">Edit profile</button>
+              <button onClick={async () => { await createClient().auth.signOut(); router.replace("/login"); router.refresh(); }} className="shrink-0 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">Sign out</button>
+            </div>
           )}
         </header>
 
@@ -101,9 +213,10 @@ export default function ProfilePage() {
           <div className="px-6 pb-8 sm:px-10">
             {/* Avatar and name */}
             <div className="-mt-12 mb-8 flex flex-wrap items-end gap-4">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 text-4xl">
-                🌷
-              </div>
+              <button type="button" onClick={() => photoInput.current?.click()} disabled={photoSaving} className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-pink-100 text-4xl disabled:opacity-60" aria-label="Change profile photo">
+                {photoUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={photoUrl} alt="Profile" className="h-full w-full object-cover" /> : "🌷"}
+                <input ref={photoInput} type="file" accept="image/*" hidden onChange={(event) => void updatePhoto(event.target.files?.[0])} />
+              </button>
 
               <div className="pb-1">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -128,6 +241,7 @@ export default function ProfilePage() {
                 {savedMessage}
               </p>
             )}
+            {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
             {isEditing ? (
               <form onSubmit={saveProfile} className="space-y-8">
@@ -174,11 +288,10 @@ export default function ProfilePage() {
                         onChange={(e) => updateField("gender", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-pink-400"
                       >
-                        <option>Woman</option>
-                        <option>Man</option>
-                        <option>Non-binary</option>
-                        <option>Prefer not to say</option>
-                        <option>Other</option>
+                        <option value="woman">Woman</option>
+                        <option value="man">Man</option>
+                        <option value="non-binary">Non-binary</option>
+                        <option value="other">Prefer not to say / other</option>
                       </select>
                     </div>
 
@@ -197,12 +310,30 @@ export default function ProfilePage() {
                         }
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-pink-400"
                       >
-                        <option>A meaningful relationship</option>
-                        <option>Getting to know people</option>
-                        <option>Friendship</option>
-                        <option>Still figuring it out</option>
+                        <option>Long-term relationship</option>
+                        <option>Getting to know someone</option>
+                        <option>Meaningful connection</option>
+                        <option>Friendship first</option>
                       </select>
                     </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="mb-4 text-lg font-bold text-gray-900">My type</h3>
+                  <div className="grid gap-5 sm:grid-cols-3">
+                    <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                      Interested in
+                      <select value={draftPreferences.preferredGender} onChange={(event) => setDraftPreferences((current) => ({ ...current, preferredGender: event.target.value }))} className="h-12 rounded-xl border border-gray-200 bg-white px-4">
+                        <option value="everyone">Everyone</option><option value="women">Women</option><option value="men">Men</option><option value="non-binary">Non-binary people</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">Minimum age
+                      <input type="number" min={18} max={100} value={draftPreferences.minAge} onChange={(event) => setDraftPreferences((current) => ({ ...current, minAge: Number(event.target.value) }))} className="h-12 rounded-xl border border-gray-200 px-4" />
+                    </label>
+                    <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">Maximum age
+                      <input type="number" min={18} max={100} value={draftPreferences.maxAge} onChange={(event) => setDraftPreferences((current) => ({ ...current, maxAge: Number(event.target.value) }))} className="h-12 rounded-xl border border-gray-200 px-4" />
+                    </label>
                   </div>
                 </section>
 
@@ -279,9 +410,10 @@ export default function ProfilePage() {
 
                   <button
                     type="submit"
+                    disabled={saving}
                     className="rounded-xl bg-pink-500 px-6 py-3 font-semibold text-white transition hover:bg-pink-600"
                   >
-                    Save changes
+                    {saving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </form>
