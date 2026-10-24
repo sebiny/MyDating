@@ -19,11 +19,16 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendPromptOpen, setResendPromptOpen] = useState(false);
 
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setNotice("");
+    setShowResend(false);
+    setResendPromptOpen(false);
     setSubmitting(true);
 
     try {
@@ -39,7 +44,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
-          setNotice("Check your email to verify your account, then sign in.");
+          // Supabase may intentionally return a generic signup response for an existing email.
+          // Avoid promising that an email was sent; let the user sign in or request another link.
+          setNotice("An account may already exist for this email. Try logging in instead. If you have not verified it yet, check your inbox or request a confirmation link below.");
+          setShowResend(true);
         } else {
           router.replace("/onboarding/profile-setup");
           router.refresh();
@@ -54,6 +62,27 @@ export default function AuthForm({ mode }: AuthFormProps) {
       setError(cause instanceof Error ? cause.message : "Authentication failed. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!email.trim() || resending) return;
+    setError("");
+    setNotice("");
+    setResending(true);
+    try {
+      const supabase = createClient();
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (resendError) throw resendError;
+      setNotice("If this email has a pending confirmation, a new link has been requested. Check your inbox and spam folder.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not request another confirmation email.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -154,7 +183,29 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </div>
 
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-          {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
+          {notice && <div role="status" className="space-y-2 text-sm text-emerald-700">
+            <p>{notice}</p>
+            {isSignup && <Link href="/login" className="inline-flex font-semibold text-pink-600 underline underline-offset-2">Go to login</Link>}
+          </div>}
+          {isSignup && showResend && (
+            <div className="space-y-2 text-center">
+              <button
+                type="button"
+                onClick={() => setResendPromptOpen((open) => !open)}
+                className="text-sm font-medium text-gray-600 underline underline-offset-2"
+              >
+                {resendPromptOpen ? "Hide confirmation options" : "Still waiting for a confirmation email?"}
+              </button>
+              {resendPromptOpen && <button
+                type="button"
+                onClick={() => void resendConfirmation()}
+                disabled={resending || !email.trim()}
+                className="block w-full text-sm font-semibold text-pink-600 underline underline-offset-2 disabled:opacity-50"
+              >
+                {resending ? "Requesting link…" : "Send another confirmation link"}
+              </button>}
+            </div>
+          )}
 
           <button
             type="submit"
