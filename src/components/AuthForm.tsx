@@ -56,9 +56,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
-          // Supabase may intentionally return a generic signup response for an existing email.
-          // Avoid promising that an email was sent; let the user sign in or request another link.
-          setNotice("An account may already exist for this email. Try logging in instead. If you have not verified it yet, check your inbox or request a confirmation link below.");
+          // With email confirmation enabled, new signups also have no session yet.
+          // Supabase may also mask whether an email already has an account, so give both paths clearly.
+          setNotice("Check your email for a confirmation link. If it doesn’t arrive, check spam or request another link below.");
           setShowResend(true);
         } else {
           router.replace("/onboarding/profile-setup");
