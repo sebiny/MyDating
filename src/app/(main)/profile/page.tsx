@@ -4,6 +4,7 @@ import { initialMyProfile, MyProfile } from "@/src/lib/profiles";
 import { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/browser";
+import BottomNavbar from "@/src/components/layout/BottomNavbar";
 
 const fields: {
   key: keyof MyProfile;
@@ -185,7 +186,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fff8fa] px-4 py-10 sm:px-8">
+    <main className="min-h-screen bg-[#fff8fa] px-4 py-10 pb-28 sm:px-8">
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex items-center justify-between gap-4">
           <div>
@@ -504,6 +505,7 @@ export default function ProfilePage() {
           </div>
         </section>
       </div>
+      <BottomNavbar />
     </main>
   );
 }
