@@ -9,6 +9,17 @@ type AuthFormProps = {
   mode: "signup" | "login";
 };
 
+function describeAuthError(cause: unknown) {
+  const message = cause instanceof Error ? cause.message : "Authentication failed. Please try again.";
+  if (/over_email_send_rate_limit|email rate limit exceeded/i.test(message)) {
+    return "Supabase temporarily blocked another email because too many were requested. Wait for the limit to reset. For public signups, the project owner needs to configure custom SMTP in Supabase.";
+  }
+  if (/email address not authorized/i.test(message)) {
+    return "Supabase's test email sender only delivers to authorized project team addresses. The project owner needs to configure custom SMTP for public signups.";
+  }
+  return message;
+}
+
 export default function AuthForm({ mode }: AuthFormProps) {
   const isSignup = mode === "signup";
   const router = useRouter();
@@ -39,6 +50,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           password,
           options: {
             data: { name: name.trim() },
+            // The confirmation link returns to the same host where signup began (local or Vercel).
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
@@ -59,7 +71,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         router.refresh();
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Authentication failed. Please try again.");
+      setError(describeAuthError(cause));
     } finally {
       setSubmitting(false);
     }
@@ -80,7 +92,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if (resendError) throw resendError;
       setNotice("If this email has a pending confirmation, a new link has been requested. Check your inbox and spam folder.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not request another confirmation email.");
+      setError(describeAuthError(cause));
     } finally {
       setResending(false);
     }

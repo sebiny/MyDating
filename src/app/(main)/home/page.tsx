@@ -2,22 +2,70 @@
 
 import Link from "next/link";
 import BottomNavbar from "@/src/components/layout/BottomNavbar";
-import { getCuratedProfiles, type Profile } from "@/src/lib/profiles";
+import { getCuratedProfilesPage, type Profile } from "@/src/lib/profiles";
 import { useSelection } from "@/src/context/SelectionContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const PAGE_COST = 25;
+const PAGE_SIZE = 10;
 
 export default function HomePage() {
   const { selectedIds, toggleSelection } = useSelection();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pageNumber, setPageNumber] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [creditBalance, setCreditBalance] = useState(0);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
+  const [showUnlockPrompt, setShowUnlockPrompt] = useState(false);
+  const endOfFeedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getCuratedProfiles()
-      .then(setProfiles)
+    getCuratedProfilesPage(0)
+      .then((page) => {
+        setProfiles(page.profiles);
+        setCreditBalance(page.balance);
+        setHasMore(page.hasMore);
+      })
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load curated profiles."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const target = endOfFeedRef.current;
+    if (!target || !hasMore || loading || unlocking) return;
+    const observer = new IntersectionObserver(([entry]) => setShowUnlockPrompt(entry.isIntersecting), { rootMargin: "180px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loading, unlocking, profiles.length]);
+
+  async function unlockNextPage() {
+    if (unlocking || !hasMore) return;
+    setUnlocking(true);
+    setUnlockError("");
+    try {
+      const nextPage = await getCuratedProfilesPage(pageNumber + 1);
+      if (nextPage.insufficientCredits) {
+        setCreditBalance(nextPage.balance);
+        setUnlockError(`You need ${PAGE_COST} credits to reveal the next ${PAGE_SIZE} people.`);
+        return;
+      }
+      setProfiles((current) => [...current, ...nextPage.profiles]);
+      setPageNumber(nextPage.page);
+      setCreditBalance(nextPage.balance);
+      setHasMore(nextPage.hasMore);
+      setShowUnlockPrompt(false);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Could not open the next page.";
+      setUnlockError(message.includes("INSUFFICIENT_CREDITS")
+        ? `You need ${PAGE_COST} credits to reveal the next ${PAGE_SIZE} people.`
+        : message);
+    } finally {
+      setUnlocking(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#faf8f6] pb-36 text-gray-900">
@@ -41,10 +89,15 @@ export default function HomePage() {
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Your type</h2>
 
-          <span className="rounded-full bg-white px-3 py-1 text-sm text-gray-600 shadow-sm">
-            {profiles.length} people
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-600">{creditBalance} credits</span>
+            <span className="rounded-full bg-white px-3 py-1 text-sm text-gray-600 shadow-sm">{profiles.length} people</span>
+          </div>
         </div>
+
+        {!loading && !error && profiles.length > 0 && !hasMore && (
+          <p className="mt-8 text-center text-sm text-gray-500">You’ve seen everyone available in your curated pool right now.</p>
+        )}
 
         {/* Profile grid */}
         {loading && <p className="col-span-full py-12 text-center text-sm text-gray-500">Finding people who fit your type…</p>}
@@ -124,6 +177,19 @@ export default function HomePage() {
             );
           })}
         </div>
+
+        {!loading && !error && hasMore && <div ref={endOfFeedRef} className="h-2" aria-hidden="true" />}
+        {!loading && !error && hasMore && showUnlockPrompt && (
+          <section className="mt-6 rounded-2xl border border-rose-100 bg-white p-5 text-center shadow-sm" aria-label="Unlock more curated profiles">
+            <h2 className="font-semibold">Keep discovering</h2>
+            <p className="mt-1 text-sm text-gray-500">The next {PAGE_SIZE} people are ranked for your type. Unlock them for {PAGE_COST} credits.</p>
+            {unlockError && <p role="alert" className="mt-3 text-sm text-amber-700">{unlockError} You receive 50 free credits each day.</p>}
+            <button type="button" onClick={() => void unlockNextPage()} disabled={unlocking || creditBalance < PAGE_COST} className="mt-4 rounded-xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50">
+              {unlocking ? "Unlocking…" : creditBalance >= PAGE_COST ? `Unlock next ${PAGE_SIZE} · ${PAGE_COST} credits` : "Not enough credits"}
+            </button>
+            {creditBalance < PAGE_COST && <p className="mt-3 text-xs text-gray-500">Your 50 daily credits are added when you visit discovery each day. Credit purchases will be available after payment setup.</p>}
+          </section>
+        )}
 
         {/* Review selection button */}
         {selectedIds.length > 0 && (

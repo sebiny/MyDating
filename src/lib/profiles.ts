@@ -54,6 +54,14 @@ type ProfileRow = {
   interests: string[];
 };
 
+export type CuratedPage = {
+  profiles: Profile[];
+  page: number;
+  balance: number;
+  hasMore: boolean;
+  insufficientCredits?: boolean;
+};
+
 function toProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
@@ -67,11 +75,26 @@ function toProfile(row: ProfileRow): Profile {
   };
 }
 
-export async function getCuratedProfiles() {
+export async function getCuratedProfilesPage(pageNumber: number): Promise<CuratedPage> {
   const { createClient } = await import("@/src/lib/supabase/browser");
-  const { data, error } = await createClient().rpc("discover_profiles");
+  const { data, error } = await createClient().rpc("get_curated_page", {
+    p_page_number: pageNumber,
+  });
   if (error) throw error;
-  return ((data ?? []) as ProfileRow[]).map(toProfile);
+  const page = data as {
+    profiles: ProfileRow[];
+    page: number;
+    balance: number;
+    has_more: boolean;
+    insufficient_credits?: boolean;
+  };
+  return {
+    profiles: (page.profiles ?? []).map(toProfile),
+    page: page.page,
+    balance: page.balance,
+    hasMore: page.has_more,
+    insufficientCredits: page.insufficient_credits,
+  };
 }
 
 export async function getSelectedProfiles(ids: string[]) {
