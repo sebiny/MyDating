@@ -4,7 +4,6 @@ import { initialMyProfile, MyProfile } from "@/src/lib/profiles";
 import { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/browser";
-import BottomNavbar from "@/src/components/layout/BottomNavbar";
 
 const fields: {
   key: keyof MyProfile;
@@ -216,21 +215,31 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fff8fa] px-4 py-10 pb-28 sm:px-8">
+    <main className="min-h-screen bg-[#fff8fa] px-4 py-8 pb-10 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-4xl">
-        <header className="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <p className="mb-2 text-sm font-medium text-pink-500">
-              YOUR SPACE ♡
-            </p>
-            <h1 className="text-3xl font-bold text-gray-900">My profile</h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Let people get to know the real you.
-            </p>
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/home")}
+              aria-label="Back to discovery"
+              className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-pink-100 bg-white text-2xl text-pink-600 shadow-sm transition hover:bg-pink-50"
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <div>
+              <p className="mb-2 text-sm font-medium text-pink-500">
+                YOUR SPACE ♡
+              </p>
+              <h1 className="text-3xl font-bold text-gray-900">My profile</h1>
+              <p className="mt-2 text-sm text-gray-500">
+                Let people get to know the real you.
+              </p>
+            </div>
           </div>
 
           {!isEditing && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
               <button onClick={startEditing} className="shrink-0 rounded-xl bg-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-600">Edit profile</button>
               <button onClick={async () => { await createClient().auth.signOut(); router.replace("/login"); router.refresh(); }} className="shrink-0 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">Sign out</button>
             </div>
@@ -542,7 +551,6 @@ export default function ProfilePage() {
           </button>
         </section>
       </div>
-      <BottomNavbar />
       {accountDeleted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" role="presentation">
           <section
