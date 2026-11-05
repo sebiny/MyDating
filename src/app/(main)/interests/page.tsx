@@ -122,7 +122,14 @@ export default function InterestsPage() {
           <h2 className="mb-4 text-lg font-semibold">Your sent interests</h2>
           {outgoing.length === 0 ? <p className="rounded-2xl bg-white p-5 text-sm text-gray-500">No interests sent yet. <Link className="font-semibold text-pink-600" href="/home">Discover people</Link></p> : (
             <ul className="divide-y rounded-2xl bg-white px-5">
-              {outgoing.map(({ id, person, status }) => <li key={id} className="flex items-center justify-between gap-3 py-4"><span className="font-medium">{person.name}</span><span className="text-sm capitalize text-gray-500">{status}</span></li>)}
+              {outgoing.map(({ id, person, status }) => <li key={id} className="flex items-center justify-between gap-3 py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={person.image} alt={`${person.name}'s profile`} className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-pink-100" />
+                  <span className="truncate font-medium">{person.name}</span>
+                </div>
+                <span className="shrink-0 text-sm capitalize text-gray-500">{status}</span>
+              </li>)}
             </ul>
           )}
         </section>

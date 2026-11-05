@@ -6,8 +6,8 @@ import { getCuratedProfilesPage, type Profile } from "@/src/lib/profiles";
 import { useSelection } from "@/src/context/SelectionContext";
 import { useEffect, useRef, useState } from "react";
 
-const PAGE_COST = 25;
-const PAGE_SIZE = 10;
+const PAGE_COST = 100;
+const PAGE_SIZE = 20;
 
 export default function HomePage() {
   const { selectedIds, toggleSelection } = useSelection();
@@ -152,6 +152,7 @@ export default function HomePage() {
                   <h3 className="font-semibold">
                     {profile.name}, {profile.age}
                   </h3>
+                  {profile.matchPercent !== undefined && <p className="mt-1 text-xs font-semibold text-rose-600">{profile.matchPercent}% type match</p>}
 
                   <p className="mt-1 text-xs font-medium text-rose-500">
                     {[profile.job, profile.city].filter(Boolean).join(" · ")}
@@ -183,11 +184,11 @@ export default function HomePage() {
           <section className="mt-6 rounded-2xl border border-rose-100 bg-white p-5 text-center shadow-sm" aria-label="Unlock more curated profiles">
             <h2 className="font-semibold">Keep discovering</h2>
             <p className="mt-1 text-sm text-gray-500">The next {PAGE_SIZE} people are ranked for your type. Unlock them for {PAGE_COST} credits.</p>
-            {unlockError && <p role="alert" className="mt-3 text-sm text-amber-700">{unlockError} You receive 50 free credits each day.</p>}
+            {unlockError && <p role="alert" className="mt-3 text-sm text-amber-700">{unlockError} You receive 20 free credits each day, up to 100.</p>}
             <button type="button" onClick={() => void unlockNextPage()} disabled={unlocking || creditBalance < PAGE_COST} className="mt-4 rounded-xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50">
               {unlocking ? "Unlocking…" : creditBalance >= PAGE_COST ? `Unlock next ${PAGE_SIZE} · ${PAGE_COST} credits` : "Not enough credits"}
             </button>
-            {creditBalance < PAGE_COST && <p className="mt-3 text-xs text-gray-500">Your 50 daily credits are added when you visit discovery each day. Credit purchases will be available after payment setup.</p>}
+            {creditBalance < PAGE_COST && <p className="mt-3 text-xs text-gray-500">Your 20 daily credits are added when you visit discovery each day, up to a 100-credit maximum.</p>}
           </section>
         )}
 

@@ -24,6 +24,7 @@ export type Profile = {
   city?: string;
   interests?: string[];
   intro?:string;
+  matchPercent?: number;
 };
 
 export const initialMyProfile: MyProfile = {
@@ -52,6 +53,7 @@ type ProfileRow = {
   occupation: string | null;
   city: string | null;
   interests: string[];
+  match_percent?: number;
 };
 
 export type CuratedPage = {
@@ -72,6 +74,7 @@ function toProfile(row: ProfileRow): Profile {
     job: row.occupation ?? "",
     city: row.city ?? undefined,
     interests: row.interests ?? [],
+    matchPercent: row.match_percent,
   };
 }
 
