@@ -39,7 +39,7 @@ const RELATIONSHIP_GOALS = [
 ];
 
 const chipBase =
-  "rounded-full border px-4 py-2.5 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#403e91]";
+  "rounded-full border px-4 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a53e4b]";
 
 export default function IntroducePage() {
   const router = useRouter();
@@ -107,41 +107,42 @@ export default function IntroducePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f5fb] px-4 py-8 text-[#24223b] sm:py-12">
+    <main className="min-h-screen bg-[#f7f4f1] px-4 py-5 text-[#28211f] sm:px-6 sm:py-10">
       <form
         onSubmit={handleContinue}
-        className="mx-auto w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl shadow-[#302d72]/5 sm:p-10"
+        className="mx-auto w-full max-w-5xl"
       >
         {/* Progress */}
-        <div className="mb-8 flex gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-[#403e91]" />
-          <div className="h-1.5 flex-1 rounded-full bg-[#403e91]" />
-          <div className="h-1.5 flex-1 rounded-full bg-gray-200" />
+        <div className="mb-5 flex gap-1.5" aria-label="Step 2 of 3">
+          <div className="h-1 flex-1 rounded-full bg-[#a53e4b]" />
+          <div className="h-1 flex-1 rounded-full bg-[#a53e4b]" />
+          <div className="h-1 flex-1 rounded-full bg-[#e6dfdb]" />
         </div>
 
-        <p className="mb-2 text-xs font-bold tracking-[0.2em] text-[#403e91]">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#9a6263]">
           STEP 2 OF 3
         </p>
 
-        <div className="flex justify-between">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#342624] sm:text-5xl">
             Tell us your story.
           </h1>
-          <Link href="/onboarding/profile-setup">Go back</Link>
+          <Link className="shrink-0 text-sm font-semibold text-[#806f6c] transition hover:text-[#a53e4b]" href="/onboarding/profile-setup">← Back</Link>
         </div>
 
-        <p className="mt-3 text-sm leading-6 text-gray-500">
+        <p className="mt-3 text-sm leading-6 text-[#806f6c]">
           Go beyond the basics. Let people discover what makes you, you.
         </p>
 
         {/* Introduction */}
-        <section className="mt-8">
+        <section className="mt-6 rounded-[1.5rem] border border-[#eee7e2] bg-white p-5 sm:p-7">
+          <div className="mb-4"><h2 className="font-serif text-2xl font-semibold text-[#342624]">Your introduction</h2><p className="mt-1 text-sm text-[#897a75]">A few honest details make a lovely first impression.</p></div>
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="introduction" className="font-semibold">
               About me
             </label>
 
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-[#a1918c]">
               {introduction.length}/500
             </span>
           </div>
@@ -156,10 +157,10 @@ export default function IntroducePage() {
             rows={5}
             maxLength={500}
             required
-            className="mt-3 w-full resize-y rounded-2xl border border-gray-200 p-4 text-sm leading-6 outline-none transition placeholder:text-gray-400 focus:border-[#403e91] focus:ring-2 focus:ring-[#403e91]/10"
+            className="mt-3 w-full resize-y rounded-2xl border border-[#e8dfda] bg-[#fcfaf8] p-4 text-sm leading-6 outline-none transition placeholder:text-[#aa9c97] focus:border-[#a53e4b] focus:ring-2 focus:ring-[#a53e4b]/10"
           />
 
-          <p className="mt-2 text-xs leading-5 text-gray-400">
+          <p className="mt-2 text-xs leading-5 text-[#a1918c]">
             {
               "Share your personality, your passions, or something people wouldn't guess about you."
             }
@@ -167,13 +168,13 @@ export default function IntroducePage() {
         </section>
 
         {/* Hobbies */}
-        <section className="mt-8">
+        <section className="mt-4 rounded-[1.5rem] border border-[#eee7e2] bg-white p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold">What do you enjoy?</h2>
-            <span className="text-xs text-gray-400">{hobbies.length}/5</span>
+            <span className="rounded-full bg-[#f7eeeb] px-3 py-1 text-xs font-semibold text-[#9b4d55]">{hobbies.length}/5</span>
           </div>
 
-          <p className="mt-2 text-sm text-gray-500">Choose up to 5 hobbies.</p>
+          <p className="mt-2 text-sm text-[#897a75]">Choose up to 5 hobbies.</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {HOBBIES.map((hobby) => {
@@ -187,8 +188,8 @@ export default function IntroducePage() {
                   onClick={() => toggleItem(hobby, hobbies, setHobbies, 5)}
                   className={`${chipBase} ${
                     selected
-                      ? "border-[#d8ff80] bg-[#d8ff80]"
-                      : "border-gray-200 bg-white hover:border-[#403e91]"
+                      ? "border-[#a53e4b] bg-[#a53e4b] text-white"
+                      : "border-[#e8dfda] bg-[#fcfaf8] text-[#594d49] hover:border-[#a53e4b]"
                   }`}
                 >
                   {hobby}
@@ -199,13 +200,13 @@ export default function IntroducePage() {
         </section>
 
         {/* Lifestyle */}
-        <section className="mt-8">
+        <section className="mt-4 rounded-[1.5rem] border border-[#eee7e2] bg-white p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold">Your lifestyle</h2>
-            <span className="text-xs text-gray-400">{lifestyle.length}/3</span>
+            <span className="rounded-full bg-[#f7eeeb] px-3 py-1 text-xs font-semibold text-[#9b4d55]">{lifestyle.length}/3</span>
           </div>
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-[#897a75]">
             Pick up to 3 that describe you.
           </p>
 
@@ -221,8 +222,8 @@ export default function IntroducePage() {
                   onClick={() => toggleItem(item, lifestyle, setLifestyle, 3)}
                   className={`${chipBase} ${
                     selected
-                      ? "border-[#d8ff80] bg-[#d8ff80]"
-                      : "border-gray-200 bg-white hover:border-[#403e91]"
+                      ? "border-[#a53e4b] bg-[#a53e4b] text-white"
+                      : "border-[#e8dfda] bg-[#fcfaf8] text-[#594d49] hover:border-[#a53e4b]"
                   }`}
                 >
                   {item}
@@ -233,10 +234,10 @@ export default function IntroducePage() {
         </section>
 
         {/* Relationship goals */}
-        <section className="mt-8">
+        <section className="mt-4 rounded-[1.5rem] border border-[#eee7e2] bg-white p-5 sm:p-7">
           <h2 className="font-semibold">What are you looking for?</h2>
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-[#897a75]">
             Choose what best describes your intentions.
           </p>
 
@@ -252,8 +253,8 @@ export default function IntroducePage() {
                   onClick={() => setRelationshipGoal(goal)}
                   className={`rounded-2xl border p-4 text-left text-sm font-medium transition ${
                     selected
-                      ? "border-[#403e91] bg-[#f0efff] text-[#403e91]"
-                      : "border-gray-200 hover:border-[#403e91]"
+                      ? "border-[#a53e4b] bg-[#fbf1ef] text-[#8f3440]"
+                      : "border-[#e8dfda] hover:border-[#a53e4b]"
                   }`}
                 >
                   <span className="flex items-center justify-between gap-2">
@@ -275,20 +276,20 @@ export default function IntroducePage() {
         {/* Navigation */}
         <button
           type="submit"
-          className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#d8a7ff] font-semibold text-[#21172d] transition hover:bg-[#c991f7]"
+          className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#a53e4b] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(165,62,75,.8)] transition hover:bg-[#8f3440] sm:mx-auto sm:max-w-sm"
         >
           Continue <span aria-hidden="true">→</span>
         </button>
 
         <button
           type="button"
-          onClick={() => router.push("/profile-setup")}
-          className="mt-3 w-full rounded-full py-3 text-sm font-semibold text-[#403e91] hover:bg-[#f6f5fb]"
+          onClick={() => router.push("/onboarding/profile-setup")}
+          className="mt-3 w-full rounded-full py-3 text-sm font-semibold text-[#806f6c] transition hover:bg-white hover:text-[#a53e4b]"
         >
           Back to profile
         </button>
 
-        <p className="mt-3 text-center text-xs text-gray-400">
+        <p className="mt-3 text-center text-xs text-[#a1918c]">
           You can edit your introduction later.
         </p>
       </form>

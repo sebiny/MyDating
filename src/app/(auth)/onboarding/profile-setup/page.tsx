@@ -113,36 +113,36 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f5fb] px-4 py-8 text-[#24223b] sm:py-12">
+    <main className="min-h-screen bg-[#f7f4f1] px-4 py-5 text-[#28211f] sm:px-6 sm:py-10">
       <form
         onSubmit={handleContinue}
-        className="mx-auto w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl shadow-[#302d72]/5 sm:p-10"
+        className="mx-auto w-full max-w-4xl"
       >
         {/* Progress */}
-        <div className="mb-8 flex gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-[#403e91]" />
-          <div className="h-1.5 flex-1 rounded-full bg-gray-200" />
-          <div className="h-1.5 flex-1 rounded-full bg-gray-200" />
+        <div className="mb-5 flex gap-1.5" aria-label="Step 1 of 3">
+          <div className="h-1 flex-1 rounded-full bg-[#a53e4b]" />
+          <div className="h-1 flex-1 rounded-full bg-[#e6dfdb]" />
+          <div className="h-1 flex-1 rounded-full bg-[#e6dfdb]" />
         </div>
 
-        <p className="mb-2 text-xs font-bold tracking-[0.2em] text-[#403e91]">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#9a6263]">
           STEP 1 OF 3
         </p>
 
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#342624] sm:text-5xl">
           Let&apos;s start with you.
         </h1>
 
-        <p className="mt-3 text-sm leading-6 text-gray-500">
+        <p className="mt-3 text-sm leading-6 text-[#806f6c]">
           Create your profile and let people get to know you.
         </p>
 
         {/* Profile photo */}
-        <div className="my-8 flex flex-col items-center">
+        <section className="mt-7 flex flex-col items-center rounded-[1.5rem] border border-[#eee7e2] bg-white px-5 py-7">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#c9c5e4] bg-[#f2f0fc] text-sm text-[#403e91] transition hover:border-[#403e91] sm:h-40 sm:w-40"
+            className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#d9c7c2] bg-[#f8f2ef] text-sm text-[#a53e4b] transition hover:border-[#a53e4b] sm:h-40 sm:w-40"
             aria-label="Upload profile photo"
           >
             {photo ? (
@@ -168,12 +168,15 @@ export default function ProfileSetupPage() {
             onChange={handlePhotoChange}
           />
 
-          <p className="mt-3 text-xs text-gray-500">
-            Choose a photo that feels like you.
+          <p className="mt-3 text-sm font-medium text-[#594d49]">
+            Add a photo that feels like you
           </p>
-        </div>
+          <p className="mt-1 text-xs text-[#a1918c]">A clear photo helps people recognize you.</p>
+        </section>
 
         {/* Form fields */}
+        <section className="mt-4 rounded-[1.5rem] border border-[#eee7e2] bg-white p-5 sm:p-7">
+        <div className="mb-5"><h2 className="font-serif text-2xl font-semibold text-[#342624]">The basics</h2><p className="mt-1 text-sm text-[#897a75]">A few details to help start your profile.</p></div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold">Display name *</span>
@@ -183,7 +186,7 @@ export default function ProfileSetupPage() {
               placeholder="What should we call you?"
               maxLength={30}
               required
-              className="h-12 rounded-xl border border-gray-200 px-4 text-sm outline-none transition focus:border-[#403e91] focus:ring-2 focus:ring-[#403e91]/10"
+              className="h-12 rounded-xl border border-[#e8dfda] bg-[#fcfaf8] px-4 text-sm outline-none transition focus:border-[#a53e4b] focus:ring-2 focus:ring-[#a53e4b]/10"
             />
           </label>
 
@@ -197,7 +200,7 @@ export default function ProfileSetupPage() {
               min={18}
               max={100}
               required
-              className="h-12 rounded-xl border border-gray-200 px-4 text-sm outline-none focus:border-[#403e91] focus:ring-2 focus:ring-[#403e91]/10"
+              className="h-12 rounded-xl border border-[#e8dfda] bg-[#fcfaf8] px-4 text-sm outline-none focus:border-[#a53e4b] focus:ring-2 focus:ring-[#a53e4b]/10"
             />
           </label>
 
@@ -207,7 +210,7 @@ export default function ProfileSetupPage() {
               value={gender}
               onChange={(e) => setGender(e.target.value)}
               required
-              className="h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#403e91] focus:ring-2 focus:ring-[#403e91]/10"
+              className="h-12 rounded-xl border border-[#e8dfda] bg-[#fcfaf8] px-4 text-sm outline-none focus:border-[#a53e4b] focus:ring-2 focus:ring-[#a53e4b]/10"
             >
               <option value="">Select your gender</option>
               <option value="woman">Woman</option>
@@ -226,10 +229,11 @@ export default function ProfileSetupPage() {
               placeholder="e.g. Vancouver, Canada"
               maxLength={80}
               required
-              className="h-12 rounded-xl border border-gray-200 px-4 text-sm outline-none focus:border-[#403e91] focus:ring-2 focus:ring-[#403e91]/10"
+              className="h-12 rounded-xl border border-[#e8dfda] bg-[#fcfaf8] px-4 text-sm outline-none focus:border-[#a53e4b] focus:ring-2 focus:ring-[#a53e4b]/10"
             />
           </label>
         </div>
+        </section>
 
         {error && (
           <p role="alert" className="mt-5 text-sm text-red-600">
@@ -240,12 +244,12 @@ export default function ProfileSetupPage() {
         <button
           type="submit"
           disabled={saving}
-          className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#d8a7ff] font-semibold text-[#21172d] transition hover:bg-[#c991f7]"
+          className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#a53e4b] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(165,62,75,.8)] transition hover:bg-[#8f3440] disabled:opacity-60 sm:mx-auto sm:max-w-sm"
         >
           {saving ? "Saving…" : <>Continue <span aria-hidden="true">→</span></>}
         </button>
 
-        <p className="mt-4 text-center text-xs text-gray-400">
+        <p className="mt-4 text-center text-xs text-[#a1918c]">
           Your story starts with the basics.
         </p>
       </form>

@@ -33,6 +33,15 @@ export async function proxy(request: NextRequest) {
   }
 
   const { data: profile } = await supabase.from("profiles").select("is_complete").eq("id", user.id).maybeSingle();
+  // A deleted account cascades its profile row. Do not let a still-valid JWT
+  // fall through to onboarding, where a missing profile could otherwise look
+  // like an unfinished setup.
+  if (!profile) {
+    const signup = request.nextUrl.clone();
+    signup.pathname = "/signup";
+    signup.search = "";
+    return NextResponse.redirect(signup);
+  }
   if (isOnboarding && profile?.is_complete) {
     const home = request.nextUrl.clone();
     home.pathname = "/home";

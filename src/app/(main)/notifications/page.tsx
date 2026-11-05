@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import BottomNavbar from "@/src/components/layout/BottomNavbar";
 import { createClient } from "@/src/lib/supabase/browser";
 
-type Notification = { id: string; kind: "interest" | "match" | "message"; entity_id: string | null; body: string; created_at: string; read_at: string | null };
+type Notification = { id: string; kind: "interest" | "match" | "message" | "ideal"; entity_id: string | null; body: string; created_at: string; read_at: string | null };
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -33,14 +33,19 @@ export default function NotificationsPage() {
     let supabase: ReturnType<typeof createClient>;
     try { supabase = createClient(); } catch { return; }
     let channel: ReturnType<typeof supabase.channel> | undefined;
+    let active = true;
     // The callback only needs the user's ID to scope the notification subscription.
     void supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (!data.user) return;
-      channel = supabase.channel(`notifications-${data.user.id}`)
+      if (!active || !data.user) return;
+      // A unique topic avoids reusing a subscribed channel if React remounts this effect.
+      channel = supabase.channel(`notifications-${data.user.id}-${crypto.randomUUID()}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${data.user.id}` }, () => void load())
         .subscribe();
     });
-    return () => { if (channel) void supabase.removeChannel(channel); };
+    return () => {
+      active = false;
+      if (channel) void supabase.removeChannel(channel);
+    };
   }, [load]);
 
   async function open(item: Notification) {
@@ -69,7 +74,7 @@ export default function NotificationsPage() {
         ) : (
           <ul className="divide-y rounded-2xl bg-white px-5 shadow-sm">
             {items.map((item) => <li key={item.id}><button type="button" onClick={() => void open(item)} className={`flex w-full items-start gap-3 py-5 text-left ${item.read_at ? "" : "font-semibold"}`}>
-              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-xl">{item.kind === "interest" ? "♡" : item.kind === "match" ? "💞" : "✉"}</span>
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-xl">{item.kind === "interest" ? "♡" : item.kind === "match" ? "💞" : item.kind === "ideal" ? "✨" : "✉"}</span>
               <span className="min-w-0 flex-1"><span className="block text-sm text-gray-800">{item.body}</span><time className="mt-1 block text-xs font-normal text-gray-400">{new Date(item.created_at).toLocaleString()}</time></span>
               {!item.read_at && <span className="mt-3 h-2 w-2 rounded-full bg-rose-500" aria-label="Unread" />}
             </button></li>)}

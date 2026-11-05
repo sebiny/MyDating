@@ -49,6 +49,8 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
 
   const loadProfile = useCallback(async () => {
@@ -176,6 +178,34 @@ export default function ProfilePage() {
       setError(cause instanceof Error ? cause.message : "Could not update your photo.");
     } finally {
       setPhotoSaving(false);
+    }
+  }
+
+  async function deleteAccount() {
+    const confirmed = window.confirm("Permanently delete your account and profile? This removes your matches, messages, interests, notifications, and credits. This cannot be undone.");
+    if (!confirmed) return;
+    setDeletingAccount(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+
+      // Remove avatar objects first because Storage objects do not cascade with auth.users.
+      const { data: files, error: listError } = await supabase.storage.from("avatars").list(user.id);
+      if (listError) throw listError;
+      if (files?.length) {
+        const { error: removeError } = await supabase.storage.from("avatars").remove(files.map(file => `${user.id}/${file.name}`));
+        if (removeError) throw removeError;
+      }
+
+      const { error: deleteError } = await supabase.rpc("delete_my_account");
+      if (deleteError) throw deleteError;
+      await supabase.auth.signOut({ scope: "local" });
+      setAccountDeleted(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete your account. Please try again.");
+      setDeletingAccount(false);
     }
   }
 
@@ -504,8 +534,38 @@ export default function ProfilePage() {
             )}
           </div>
         </section>
+        <section className="mt-6 rounded-2xl border border-red-200 bg-white p-5">
+          <h2 className="font-semibold text-gray-900">Delete account</h2>
+          <p className="mt-1 text-sm text-gray-500">Permanently remove your profile and account data.</p>
+          <button type="button" onClick={() => void deleteAccount()} disabled={deletingAccount} className="mt-4 rounded-xl border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">
+            {deletingAccount ? "Deleting account…" : "Delete my account"}
+          </button>
+        </section>
       </div>
       <BottomNavbar />
+      {accountDeleted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" role="presentation">
+          <section
+            aria-labelledby="account-deleted-title"
+            aria-describedby="account-deleted-description"
+            aria-modal="true"
+            role="dialog"
+            className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl"
+          >
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-600" aria-hidden="true">✓</div>
+            <h2 id="account-deleted-title" className="mt-4 text-xl font-bold text-gray-900">Account deleted</h2>
+            <p id="account-deleted-description" className="mt-2 text-sm leading-6 text-gray-600">Your account and profile have been deleted successfully.</p>
+            <button
+              type="button"
+              autoFocus
+              onClick={() => { router.replace("/login"); router.refresh(); }}
+              className="mt-6 w-full rounded-xl bg-pink-500 py-3 font-semibold text-white transition hover:bg-pink-600"
+            >
+              Go to login
+            </button>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

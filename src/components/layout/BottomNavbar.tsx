@@ -22,9 +22,11 @@ export default function BottomNavbar() {
     try { supabase = createClient(); } catch { return; }
     let channel: ReturnType<typeof supabase.channel> | undefined;
     let activeUserId: string | undefined;
+    let mounted = true;
     // Refresh the count on events; only create a Realtime channel when the signed-in user changes.
     async function refreshCount(subscribe = true) {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted) return;
       if (!user) {
         setUnreadCount(0);
         activeUserId = undefined;
@@ -33,19 +35,28 @@ export default function BottomNavbar() {
         return;
       }
       const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
+      if (!mounted) return;
       setUnreadCount(count ?? 0);
       if (subscribe && activeUserId !== user.id) {
         if (channel) void supabase.removeChannel(channel);
         activeUserId = user.id;
-        channel = supabase.channel(`nav-notifications-${user.id}`)
+        // React Strict Mode can remount this effect before removeChannel from
+        // the previous mount has completed. A unique name prevents reusing
+        // that already-subscribed channel instance.
+        channel = supabase.channel(`nav-notifications-${user.id}-${crypto.randomUUID()}`)
           // Realtime callbacks pass false so they refresh the count without registering another listener.
           .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => void refreshCount(false))
           .subscribe();
       }
     }
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => void refreshCount());
+    // Auth callbacks run while Supabase is dispatching an auth event. Defer the
+    // async refresh so it can safely create/remove Realtime channels afterward.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      window.setTimeout(() => void refreshCount(), 0);
+    });
     void refreshCount();
     return () => {
+      mounted = false;
       subscription.unsubscribe();
       if (channel) void supabase.removeChannel(channel);
     };
