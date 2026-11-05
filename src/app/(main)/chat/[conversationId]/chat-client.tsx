@@ -52,17 +52,22 @@ export default function IndividualChatPage() {
     void loadConversation();
     let supabase: ReturnType<typeof createClient>;
     try { supabase = createClient(); } catch { return; }
-    const channel = supabase.channel(`conversation-${conversationId}`)
+    let active = true;
+    const channel = supabase.channel(`conversation-${conversationId}-${crypto.randomUUID()}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload: { new: Message }) => {
+        if (!active) return;
         // Realtime delivers the inserted row; avoid duplicates if the sender already added it locally.
         const message = payload.new as Message;
         setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
       })
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
   }, [conversationId, loadConversation]);
 
   useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
@@ -73,19 +78,23 @@ export default function IndividualChatPage() {
     if (!body || !currentUserId || sending) return;
     setSending(true);
     setError("");
-    const supabase = createClient();
-    const { data, error: sendError } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: currentUserId,
-      body,
-    }).select("id,conversation_id,sender_id,body,created_at").single();
-    if (sendError) {
-      setError(sendError.message);
-    } else if (data) {
-      setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
-      setInput("");
+    try {
+      const supabase = createClient();
+      const { data, error: sendError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: currentUserId,
+        body,
+      }).select("id,conversation_id,sender_id,body,created_at").single();
+      if (sendError) throw sendError;
+      if (data) {
+        setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
+        setInput("");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not send your message. Please try again.");
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   }
 
   if (loading) return <main className="p-8 text-center text-gray-500">Loading chat…</main>;
@@ -93,7 +102,7 @@ export default function IndividualChatPage() {
   if (!person) return <main className="p-8 text-center">Conversation unavailable.</main>;
 
   return (
-    <main className="flex h-dvh flex-col bg-white">
+    <main className="flex h-dvh min-h-0 flex-col overflow-hidden bg-white">
       <header className="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 py-3">
         <button type="button" onClick={() => router.push("/chat")} aria-label="Back to conversations" className="rounded-full px-2 py-1 text-2xl text-rose-500 hover:bg-rose-50">←</button>
         {/* eslint-disable-next-line @next/next/no-img-element */}<img src={person.image} alt="" className="h-12 w-12 rounded-full object-cover" />
@@ -101,7 +110,7 @@ export default function IndividualChatPage() {
       </header>
 
       {error && <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
-      <section aria-label="Conversation messages" className="flex-1 space-y-4 overflow-y-auto bg-gray-50 px-4 py-6">
+      <section aria-label="Conversation messages" className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-gray-50 px-4 py-6">
         {messages.length === 0 && <p className="py-10 text-center text-sm text-gray-500">You matched. Say hello and start a conversation.</p>}
         {messages.map((message) => {
           const mine = message.sender_id === currentUserId;
@@ -115,9 +124,9 @@ export default function IndividualChatPage() {
         <div ref={bottomRef} />
       </section>
 
-      <form onSubmit={(event) => void handleSend(event)} className="flex shrink-0 items-center gap-3 border-t border-gray-100 bg-white px-3 py-3 sm:px-4">
-        <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Type a message…" aria-label="Type a message" maxLength={5000} className="min-w-0 flex-1 rounded-full bg-gray-100 px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-rose-200 sm:text-base" />
-        <button type="submit" disabled={!input.trim() || sending} aria-label="Send message" className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-500 text-xl text-white hover:bg-rose-600 disabled:opacity-40">↑</button>
+      <form onSubmit={(event) => void handleSend(event)} className="flex shrink-0 items-center gap-2 border-t border-gray-100 bg-white px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-4">
+        <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Type a message…" aria-label="Type a message" enterKeyHint="send" autoComplete="off" maxLength={5000} className="min-w-0 min-h-12 flex-1 rounded-full bg-gray-100 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-rose-200 sm:px-5" />
+        <button type="submit" disabled={!input.trim() || sending} aria-label="Send message" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-500 text-xl text-white hover:bg-rose-600 disabled:opacity-40">↑</button>
       </form>
     </main>
   );
