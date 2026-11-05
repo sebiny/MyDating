@@ -195,7 +195,7 @@ export default function ProfilePage() {
       const { data: files, error: listError } = await supabase.storage.from("avatars").list(user.id);
       if (listError) throw listError;
       if (files?.length) {
-        const { error: removeError } = await supabase.storage.from("avatars").remove(files.map(file => `${user.id}/${file.name}`));
+        const { error: removeError } = await supabase.storage.from("avatars").remove(files.map((file: { name: string }) => `${user.id}/${file.name}`));
         if (removeError) throw removeError;
       }
 
