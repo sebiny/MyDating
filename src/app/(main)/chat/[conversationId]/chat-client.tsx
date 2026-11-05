@@ -70,7 +70,14 @@ export default function IndividualChatPage() {
     };
   }, [conversationId, loadConversation]);
 
-  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    const bottom = bottomRef.current;
+    // Guard this browser API so an unavailable/overridden implementation cannot
+    // crash the whole chat while React is rendering a newly sent message.
+    if (bottom && typeof bottom.scrollIntoView === "function") {
+      bottom.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages]);
 
   async function handleSend(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
