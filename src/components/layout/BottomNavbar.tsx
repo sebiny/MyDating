@@ -64,7 +64,7 @@ export default function BottomNavbar() {
 
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t border-gray-100 bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-around px-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto grid w-full max-w-5xl grid-cols-5 items-center justify-items-center px-1 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -73,7 +73,7 @@ export default function BottomNavbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex min-w-20 flex-col items-center gap-1 py-3 text-xs font-medium transition ${
+              className={`flex w-full min-w-0 flex-col items-center gap-1 py-3 text-xs font-medium transition ${
                 isActive ? "text-rose-500" : "text-gray-400 hover:text-gray-600"
               }`}
             >
