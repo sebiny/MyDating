@@ -15,6 +15,7 @@ export default function InterestsPage() {
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [activeInterest, setActiveInterest] = useState<IncomingCard | null>(null);
 
   const loadInterests = useCallback(async () => {
     setLoading(true);
@@ -58,6 +59,15 @@ export default function InterestsPage() {
   }, []);
 
   useEffect(() => { void loadInterests(); }, [loadInterests]);
+
+  useEffect(() => {
+    if (!activeInterest) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setActiveInterest(null);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [activeInterest]);
 
   async function respond(id: string, accept: boolean) {
     setWorkingId(id);
@@ -103,8 +113,10 @@ export default function InterestsPage() {
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {incoming.map(({ id, person, created_at }) => (
                 <article key={id} className="overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}<img src={person.image} alt={person.name} className="aspect-[4/3] w-full object-cover" />
-                  <div className="p-5"><h3 className="text-xl font-bold">{person.name}, {person.age}</h3>
+                  <button type="button" onClick={() => setActiveInterest({ id, person, sender_id: person.id, created_at })} aria-label={`View ${person.name}'s profile`} className="block w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}<img src={person.image} alt={person.name} className="aspect-[4/3] w-full object-cover" />
+                  </button>
+                  <div className="p-5"><button type="button" onClick={() => setActiveInterest({ id, person, sender_id: person.id, created_at })} className="text-left"><h3 className="text-xl font-bold">{person.name}, {person.age}</h3></button>
                     <p className="mt-1 text-xs text-gray-400">{new Date(created_at).toLocaleDateString()}</p>
                     <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">{person.introduction}</p>
                     <div className="mt-5 grid grid-cols-2 gap-3">
@@ -134,6 +146,30 @@ export default function InterestsPage() {
           )}
         </section>
       </div>
+      {activeInterest && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/60 p-3 backdrop-blur-sm sm:p-6"
+          onClick={(event) => { if (event.target === event.currentTarget) setActiveInterest(null); }}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="interest-profile-title" className="relative grid max-h-[92dvh] w-full max-w-3xl grid-cols-1 grid-rows-[16rem_minmax(0,1fr)] overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-2 md:grid-rows-1">
+            <button type="button" onClick={() => setActiveInterest(null)} aria-label="Close profile details" className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-2xl text-gray-700 shadow transition hover:bg-white">×</button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={activeInterest.person.image} alt={activeInterest.person.name} className="h-full w-full object-cover md:min-h-[500px]" />
+            <div className="min-h-0 overflow-y-auto p-5 sm:p-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-pink-500">Profile</p>
+              <h2 id="interest-profile-title" className="mt-1 text-2xl font-bold text-gray-900">{activeInterest.person.name}, {activeInterest.person.age}</h2>
+              {(activeInterest.person.job || activeInterest.person.city) && <p className="mt-3 text-sm font-medium text-pink-600">{[activeInterest.person.job, activeInterest.person.city].filter(Boolean).join(" · ")}</p>}
+              <p className="mt-1 text-xs text-gray-400">Interested in you · {new Date(activeInterest.created_at).toLocaleDateString()}</p>
+              <div className="mt-6"><h3 className="font-semibold text-gray-900">A little about me</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{activeInterest.person.introduction || "They haven’t added an introduction yet."}</p></div>
+              {!!activeInterest.person.interests?.length && <div className="mt-6"><h3 className="font-semibold text-gray-900">Interests</h3><div className="mt-2 flex flex-wrap gap-2">{activeInterest.person.interests.map((interest) => <span key={interest} className="rounded-full bg-pink-50 px-3 py-1.5 text-sm text-pink-700">{interest}</span>)}</div></div>}
+              <div className="mt-8 grid grid-cols-2 gap-3">
+                <button disabled={workingId === activeInterest.id} onClick={() => { void respond(activeInterest.id, false); setActiveInterest(null); }} className="rounded-xl border border-gray-200 px-3 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50">Decline</button>
+                <button disabled={workingId === activeInterest.id} onClick={() => void respond(activeInterest.id, true)} className="rounded-xl bg-pink-500 px-3 py-3 text-sm font-semibold text-white hover:bg-pink-600 disabled:opacity-50">{workingId === activeInterest.id ? "Saving…" : "Accept ♡"}</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
       <BottomNavbar />
     </main>
   );
